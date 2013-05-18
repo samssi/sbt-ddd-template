@@ -21,7 +21,7 @@ object MasterBuild extends Build {
 	lazy val root = Project(
 		id = "parent",
 		base = file(".")
-	).aggregate(infrastructure, domain, application))
+	).aggregate(infrastructure, domain, application)
 
 	lazy val infrastructure = {
 		Project(
@@ -76,4 +76,5 @@ object MasterBuild extends Build {
         "org.eclipse.jetty.orbit" % "javax.servlet" % "3.0.0.v201112011016" % "provided" artifacts (Artifact("javax.servlet", "jar", "jar"))
       )
     ) ++ buildSettings
+}
 }
