@@ -1,82 +1,50 @@
-import sbt._
-import sbt.Keys._
-import scala._
-import com.github.siasia.WebPlugin._
+package jetty
 
-object MasterBuild extends Build {
-  name := "mydddproject"
+import org.eclipse.jetty.server.Server
+import org.eclipse.jetty.webapp.WebAppContext
+import org.apache.log4j.{PatternLayout, ConsoleAppender, Level, Logger}
+import org.eclipse.jetty.server.Server
+import org.eclipse.jetty.webapp.WebAppContext
 
-  lazy val buildSettings = Seq(
-    organization := "samssi",
-    version:= "1.0-SNAPSHOT",
-    scalaVersion := "2.10.0"
-  )
+object Jetty {
+  lazy val server = new Server(8080)
+  lazy val warLocation = "application/src/main/webapp"
+  lazy val descriptor = "application/src/main/webapp/WEB-INF/web.xml"
 
-  override lazy val settings = super.settings ++ buildSettings ++ Seq(
-    resolvers ++= Seq(
-      "Sonatype releases" at "http://oss.sonatype.org/content/repositories/releases"
-    )
-  )
-
-  lazy val root = Project(
-    id = "parent",
-    base = file(".")
-  ).aggregate(infrastructure, domain, application)
-
-  lazy val infrastructure = {
-    Project(
-      id = "infrastructure",
-      base = file("infrastructure"),
-      settings = generalSettings ++ Seq(
-        libraryDependencies ++= Seq(
-        )
-      )
-    )
+  def appContext: WebAppContext = {
+    val context = new WebAppContext()
+    context.setContextPath("/")
+    context.setWar(warLocation)
+    context.setDescriptor(descriptor)
+    context
   }
 
-  lazy val domain = {
-    Project(
-      id = "domain",
-      base = file("domain"),
-      settings = generalSettings ++ Seq(
-        libraryDependencies ++= Seq(
-        )
-      )
-    ).aggregate(infrastructure) dependsOn (infrastructure)
+  def startLogging() {
+    val rootLogger = Logger.getRootLogger
+    rootLogger.setLevel(Level.INFO)
+    rootLogger.addAppender(new ConsoleAppender(new PatternLayout("%d %p [%c] - %m%n")))
   }
 
-  lazy val application = {
-    Project(
-      id = "application",
-      base = file("application"),
-      settings = generalSettings ++ serverSettings ++ Seq(
-        libraryDependencies ++= Seq(
-        )
-      )
-    ).aggregate(infrastructure, domain) dependsOn (infrastructure, domain)
+  def start() {
+    startLogging()
+    server.setHandler(appContext)
+    try {
+      server.start()
+      server.join()
+    } catch {
+      case e: Exception => {
+        e.printStackTrace()
+        System.exit(1)
+      }
+    }
   }
-
-  lazy val generalSettings = {
-    Defaults.defaultSettings ++ Seq(
-      libraryDependencies ++= Seq(
-        "junit" % "junit" % "4.8.2" % "test",
-        "log4j" % "log4j" % "1.2.16",
-        "org.slf4j" % "slf4j-log4j12" % "1.7.2",
-        "org.specs2" %% "specs2" % "1.14" % "test"
-      )
-    )
-  }
-
-  lazy val serverSettings = {
-    webSettings ++ Seq(
-      libraryDependencies ++= Seq(
-        "org.eclipse.jetty" % "jetty-server" % "8.1.7.v20120910" % "test",
-        "org.eclipse.jetty" % "jetty-plus" % "8.1.7.v20120910" % "container",
-        "org.eclipse.jetty" % "jetty-webapp" % "9.0.2.v20130417" % "test",
-        "org.eclipse.jetty" % "jetty-servlets" % "9.0.2.v20130417" % "test",
-        "org.eclipse.jetty.orbit" % "javax.servlet" % "3.0.0.v201112011016" % "provided" artifacts (Artifact("javax.servlet", "jar", "jar"))
-      )
-    ) ++ buildSettings
+  def stop() {
+    server.stop();
   }
 }
 
+object JettyStarter {
+  def main(args: Array[String]) {
+    Jetty.start()
+  }
+}
