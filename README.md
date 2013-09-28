@@ -1,7 +1,7 @@
-Domain driven design template for sbt scala project
+# Domain driven design template for sbt scala project #
 
-Instructions:
+## Instructions ##
 
-./genfolders.sh
+    ./genfolders.sh
+    sbt gen-idea #if using IntelliJ Idea
 
-sbt gen-idea #if using IntelliJ Idea
